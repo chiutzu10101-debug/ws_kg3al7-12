@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>可愛搜字遊戲（方向限定：↓↘↙）</title>
+  <style>
+    :root{
+      --bg:#fff7fb;
+      --ink:#2b2b2b;
+      --muted:#6b6b6b;
+      --primary:#ff6fb1;
+      --primary2:#8a7dff;
+      --ok:#2fbf71;
+      --gridbg:#fff;
+      --gridline:#f1e7f3;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
+      --radius:18px;
+      --cell:44px;
+      --font: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--ink);
+      background: radial-gradient(1200px 600px at 20% 0%, #ffe2f1 0%, transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, #e8e5ff 0%, transparent 55%),
+                  var(--bg);
+      min-height:100vh;
+    }
+    header{
+      padding:18px 16px 10px;
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background: conic-gradient(from 180deg, var(--primary), #ffd1e7, var(--primary2), #d9d4ff, var(--primary));
+      box-shadow: var(--shadow);
+    }
+    h1{ font-size:18px; margin:0; letter-spacing:.5px; }
+    .sub{ font-size:12px; color:var(--muted); margin-top:2px; }
+    .top-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    button{
+      border:0; border-radius:14px; padding:10px 12px;
+      background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.06);
+      cursor:pointer; font-weight:700; color:var(--ink);
+      transition: transform .08s ease, box-shadow .08s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    button:active{ transform: translateY(1px); box-shadow:0 4px 12px rgba(0,0,0,.06); }
+    .btn-primary{ background: linear-gradient(135deg, var(--primary), #ff9ccc); color:#fff; }
+    .btn-ghost{ background: rgba(255,255,255,.72); backdrop-filter: blur(10px); }
+    .btn-warn{ background: linear-gradient(135deg, #ffd7a8, #fff0c9); }
+    .btn-danger{ background: linear-gradient(135deg, #ffb7c9, #ffe3ea); }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:999px;
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      font-weight:800;
+    }
+    .timer-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:999px;
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      font-weight:900;
+    }
+    .timer-pill .tlabel{ font-size:12px; color:var(--muted); font-weight:800; }
+    .timer-pill .tvalue{ font-variant-numeric: tabular-nums; letter-spacing:.5px; }
+    .switch{ display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); }
+    .switch input{ width:18px; height:18px; accent-color: var(--primary); }
+
+    main{
+      max-width:1200px;
+      margin:0 auto;
+      padding:10px 16px 24px;
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){ main{ grid-template-columns:1fr; } }
+
+    .card{
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.6);
+    }
+    .card-h{
+      padding:12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    .card-h .title{ font-weight:900; display:flex; align-items:center; gap:10px; }
+    .badge{
+      display:inline-flex;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(138,125,255,.14);
+      color:#3b2fd9;
+      font-size:12px;
+      font-weight:900;
+    }
+    .card-b{ padding:14px; }
+
+    .lesson-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    .lesson-btn{
+      text-align:left;
+      border-radius:16px;
+      padding:12px 12px;
+      background:#fff;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .lesson-btn strong{ display:block; font-size:14px; }
+    .lesson-btn span{ display:block; font-size:12px; color:var(--muted); margin-top:4px; }
+    .lesson-btn.active{
+      background: linear-gradient(135deg, rgba(255,111,177,.18), rgba(138,125,255,.16));
+      border-color: rgba(255,111,177,.4);
+    }
+
+    .words{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:8px;
+      margin-top:8px;
+    }
+    .w{
+      padding:10px 10px;
+      border-radius:14px;
+      background:#fff;
+      border: 1px solid rgba(0,0,0,.06);
+      display:flex; align-items:center; gap:10px; justify-content:space-between;
+      font-weight:800;
+    }
+    .w.found{
+      border-color: rgba(47,191,113,.55);
+      background: rgba(47,191,113,.12);
+    }
+    .w .tick{
+      width:18px;height:18px;border-radius:6px;
+      background: rgba(0,0,0,.06);
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:12px;
+    }
+    .w.found .tick{ background: rgba(47,191,113,.20); color: var(--ok); }
+
+    .grid-wrap{ display:flex; gap:14px; align-items:stretch; flex-wrap:wrap; }
+    .grid-shell{ position:relative; display:inline-block; }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(var(--n), var(--cell));
+      grid-template-rows: repeat(var(--n), var(--cell));
+      background: var(--gridbg);
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.06);
+      padding:10px;
+      position:relative;
+      touch-action:none;
+      user-select:none;
+      box-shadow: 0 10px 26px rgba(0,0,0,.06);
+    }
+    .grid.paused{
+      pointer-events:none;
+      filter: grayscale(1) brightness(.96);
+      opacity:.75;
+    }
+    .pause-overlay{
+      position:absolute;
+      inset:0;
+      border-radius:18px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:16px;
+      background: rgba(255,255,255,.62);
+      backdrop-filter: blur(6px);
+      border: 1px dashed rgba(0,0,0,.10);
+      box-shadow: 0 10px 26px rgba(0,0,0,.08);
+    }
+    .pause-overlay.show{ display:flex; }
+    .pause-overlay .box{
+      background: rgba(255,255,255,.90);
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius:16px;
+      padding:12px 14px;
+      box-shadow: 0 10px 26px rgba(0,0,0,.06);
+      max-width: 320px;
+    }
+    .pause-overlay .box strong{ display:block; font-size:16px; }
+    .pause-overlay .box div{ margin-top:6px; font-size:12px; color:var(--muted); line-height:1.5; }
+
+    .cell{
+      width:var(--cell); height:var(--cell);
+      display:flex; align-items:center; justify-content:center;
+      border-radius: 12px;
+      border: 1px solid var(--gridline);
+      font-weight:900;
+      font-size:18px;
+      background:#fff;
+      transition: transform .06s ease;
+    }
+    .cell:hover{ transform: translateY(-1px); }
+    .cell.sel{
+      background: rgba(255,111,177,.20);
+      border-color: rgba(255,111,177,.45);
+    }
+    .cell.found{
+      background: rgba(138,125,255,.18);
+      border-color: rgba(138,125,255,.45);
+    }
+    .status{
+      margin-top:10px;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .status strong{ color:var(--ink); }
+
+    .toast{
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.85);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow: 0 8px 22px rgba(0,0,0,.08);
+      position:fixed;
+      left:16px; bottom:16px;
+      max-width: min(520px, calc(100vw - 32px));
+      display:none;
+      z-index:999;
+    }
+    .toast.show{ display:block; }
+    .toast strong{ display:block; margin-bottom:2px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .small{ font-size:12px; color:var(--muted); line-height:1.45; }
+    textarea{
+      width:100%;
+      min-height:170px;
+      border-radius:16px;
+      border:1px solid rgba(0,0,0,.10);
+      padding:10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      background: rgba(255,255,255,.85);
+      outline:none;
+    }
+    input[type="text"], select{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(0,0,0,.10);
+      padding:10px 12px;
+      background: rgba(255,255,255,.85);
+      font-weight:800;
+      outline:none;
+    }
+    select{ font-weight:800; }
+    .divider{ height:1px; background: rgba(0,0,0,.06); margin:12px 0; }
+    .hint{
+      display:inline-flex; gap:6px; align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(255,176,32,.14);
+      color: #7a4b00;
+      font-size:12px;
+      font-weight:900;
+    }
+    .okpill{
+      display:inline-flex; gap:6px; align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(47,191,113,.14);
+      color: #116437;
+      font-size:12px;
+      font-weight:900;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="logo" aria-hidden="true"></div>
+    <div>
+      <h1>可愛搜字遊戲（方向限定：↓ ↘ ↙）</h1>
+      <div class="sub">只允許「由上而下、左上往右下、右上往左下」；單題成功與全完成有不同音效。</div>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <span class="pill" id="pillLesson">尚未選課</span>
+
+    <span class="timer-pill" title="計時器">
+      <span class="tlabel">⏱ 計時</span>
+      <span class="tvalue" id="timerText">00:00</span>
+    </span>
+    <button class="btn-ghost" id="btnTimerToggle" title="暫停 / 繼續">暫停</button>
+    <button class="btn-warn" id="btnTimerReset" title="重新開始計時（歸零）">重設計時</button>
+
+    <label class="switch pill" title="找到語詞後朗讀（需瀏覽器支援語音合成）">
+      <input type="checkbox" id="ttsToggle" />
+      朗讀語詞
+    </label>
+    <button class="btn-ghost" id="btnNew" title="重新生成同一課的字格">重新生成</button>
+    <button class="btn-primary" id="btnReset" title="清除找到的狀態並重新開始">重新開始</button>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="card-h">
+      <div class="title">
+        <span>🔎 字格區</span>
+        <span class="badge" id="badgeSize">—</span>
+      </div>
+      <div class="row">
+        <span class="hint" title="操作提示">只允許 ↓ ↘ ↙</span>
+        <span class="okpill" id="pillProgress" style="display:none;">完成！</span>
+      </div>
+    </div>
+
+    <div class="card-b">
+      <div class="grid-wrap">
+        <div>
+          <div class="grid-shell">
+            <div class="grid" id="grid" aria-label="搜字方格"></div>
+            <div class="pause-overlay" id="pauseOverlay" aria-hidden="true">
+              <div class="box">
+                <strong>已暫停</strong>
+                <div>字格已鎖住。請按上方「繼續」後再操作。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status">
+            <span>已找到：<strong id="foundCount">0</strong>/<strong id="totalCount">0</strong></span>
+            <span>—</span>
+            <span id="statusHint">方向：↓、↘、↙（不接受反向與水平）</span>
+          </div>
+
+          <div class="status" style="margin-top:6px;">
+            <span>題目提示：<strong id="questionText">—</strong></span>
+          </div>
+        </div>
+
+        <div style="flex:1; min-width: 260px;">
+          <div class="card" style="box-shadow:none; background: rgba(255,255,255,.65);">
+            <div class="card-h">
+              <div class="title">📌 本課語詞</div>
+              <div class="small" id="lessonMeta">—</div>
+            </div>
+            <div class="card-b">
+              <div class="small" id="lessonQuestionHint" style="margin-bottom:8px;"></div>
+              <div class="words" id="wordList"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <aside class="card">
+    <div class="card-h">
+      <div class="title">🎒 課程選擇（按鈕）</div>
+      <span class="badge">右側只保留自訂輸入</span>
+    </div>
+
+    <div class="card-b">
+      <div class="small">
+        你可以先用內建課程；也可以在下方<strong>只輸入語詞</strong>建立「自訂課程」，並永久儲存在本機瀏覽器。
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <strong>課程清單（點按鈕切換）</strong>
+        <button class="btn-ghost" id="btnUseBuiltin">使用內建題庫</button>
+      </div>
+      <div class="lesson-grid" id="lessonGrid" style="margin-top:10px;"></div>
+
+      <div class="divider"></div>
+
+      <strong>自訂區（題目 + 字格可自訂）</strong>
+      <div class="small" style="margin:6px 0 8px;">
+        1) 課程名稱可改；2) 語詞<strong>每行一個</strong>；3) 可設定「題目提示」；4) 可選字格大小；5) 可貼上自訂字格（貼了就直接用，不再自動生成）。
+      </div>
+
+      <label class="small" for="customLessonName">自訂課程名稱（同名會覆寫）</label>
+      <input id="customLessonName" type="text" value="自訂課程" />
+
+      <div style="height:10px;"></div>
+
+      <label class="small" for="customQuestion">題目提示文字（顯示在左側題目提示區）</label>
+      <input id="customQuestion" type="text" value="請找出下列語詞" />
+
+      <div style="height:10px;"></div>
+
+      <label class="small" for="customGridSize">字格大小</label>
+      <select id="customGridSize">
+        <option value="auto">自動（依語詞推估）</option>
+        <option value="9">9 × 9</option>
+        <option value="10">10 × 10</option>
+        <option value="11">11 × 11</option>
+        <option value="12">12 × 12</option>
+        <option value="13">13 × 13</option>
+        <option value="14">14 × 14</option>
+      </select>
+
+      <div style="height:10px;"></div>
+
+      <label class="small" for="customWords">語詞（每行一個）</label>
+      <textarea id="customWords" spellcheck="false" placeholder="例如：
+巨人
+愉悅
+拜訪
+恍然大悟"></textarea>
+
+      <div class="divider"></div>
+
+      <strong>自訂字格內容（可選）</strong>
+      <div class="small" style="margin:6px 0 8px;">
+        只在你想「指定字格長相」時使用。請貼上 <strong>N 行</strong>、每行 <strong>N 個字</strong>（不要空格）。N 需與上面的字格大小一致；若上面選自動，會以你貼上的行列數為準。
+      </div>
+
+      <textarea id="customGridText" spellcheck="false" placeholder="範例（5×5）：
+傳統餅店商
+行阿婆鐵蛋
+蒼老紅毛城
+山坡回憶夕
+陽搖盪網魚"></textarea>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-ghost" id="btnMakeGridTemplate" title="依字格大小產生空白模板（方便貼上）">產生空白字格模板</button>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-primary" id="btnApplyCustom">建立/更新自訂課程（並儲存）</button>
+        <button class="btn-ghost" id="btnClearCustom">清空</button>
+      </div>
+      <div class="small" id="customNote" style="margin-top:10px;"></div>
+
+      <div class="divider"></div>
+
+      <strong>已儲存的自訂課程（本機）</strong>
+      <div class="small" style="margin:6px 0 8px;">
+        這些課程會保存在同一台電腦/同一個瀏覽器中；換電腦或清除瀏覽器資料後會消失。
+      </div>
+
+      <label class="small" for="savedSelect">選擇要載入的自訂課程</label>
+      <select id="savedSelect"></select>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn-ghost" id="btnLoadSaved">載入到輸入框</button>
+        <button class="btn-primary" id="btnPlaySaved">直接開始此課</button>
+        <button class="btn-danger" id="btnDeleteSaved">刪除此課（本機）</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <strong>遊戲規則（給學生）</strong>
+      <ul class="small" style="margin-top:8px; padding-left:18px;">
+        <li>點右側課程按鈕，看到「本課語詞清單」。</li>
+        <li>在字格中按住拖曳連線：只允許 <strong>↓、↘、↙</strong>。</li>
+        <li>找到會打勾；全部找完會播放不同完成音效並停止計時。</li>
+        <li>按「暫停」會鎖住字格（無法操作）。</li>
+      </ul>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const BUILTIN = {
+  lessons: [
+    { lesson: "G3A第七課淡水小鎮", words: ["傳統","餅店","商行","阿婆","鐵蛋","蒼老","紅毛城","山坡","回憶","夕陽","搖盪","網魚","堅硬"], question:"請找出下列語詞" },
+    { lesson: "G3A第八課安平古堡參觀記（精簡15詞）", words: ["教育","博物館","史料","模型","荷蘭","鄭成功","打敗","駐守","守護","勇敢","士兵","土地","瞭望臺","屋頂","地標"], question:"請找出下列語詞" },
+    { lesson: "G3A第九課馬太鞍的巴拉告", words: ["花蓮","馬太鞍","巴拉告","溼地","阿美族","特別","捕魚","方式","打造","魚屋","竹子","植物","釣魚","智慧","生態"], question:"請找出下列語詞" },
+    { lesson: "G3A第十課狐狸的祕密", words: ["狐狸","萬里","兄弟","祕密","放棄","烏鴉","妙計","強壯","酸葡萄","進入","飛踢","肉塊"], question:"請找出下列語詞" },
+    { lesson: "G3A第十一課巨人的花園", words: ["巨人","愉悅","拜訪","免得","離開","顯得","漫長","乾枯","恍然大悟","拆除","圍牆","盛開"], question:"請找出下列語詞" },
+    { lesson: "G3A第十二課奇特的朋友", words: ["故障","綿羊","沙漠","中央","男孩","重複","疑問","打算","帽子","後退","蟒蛇","驚訝"], question:"請找出下列語詞" }
+  ]
+};
+
+/**
+ * 自訂課程儲存 schema（v2）：
+ * { lesson, words[], question?, gridSizeMode:'auto'|number, gridText? }
+ */
+const LS_KEY = "cute_wordsearch_custom_lessons_v2";
+
+function loadSavedCustomLessons(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return [];
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return [];
+    return arr
+      .map(x => ({
+        lesson: String(x.lesson || "").trim(),
+        words: Array.isArray(x.words) ? x.words.map(w=>String(w||"").trim()).filter(Boolean) : [],
+        question: String(x.question || "請找出下列語詞").trim() || "請找出下列語詞",
+        gridSizeMode: (x.gridSizeMode === "auto" || Number.isFinite(Number(x.gridSizeMode))) ? x.gridSizeMode : "auto",
+        gridText: String(x.gridText || "").replace(/\r/g,"").trim()
+      }))
+      .filter(x => x.lesson && x.words.length >= 2);
+  }catch(_){
+    return [];
+  }
+}
+function saveCustomLessons(list){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(list));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+function normalizeWords(words){
+  const seen = new Set();
+  const out = [];
+  for(const w of words){
+    const t = String(w||"").trim();
+    if(!t) continue;
+    if(seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out;
+}
+function parseLinesToWords(raw){
+  const lines = String(raw||"")
+    .replace(/\r/g,"")
+    .split("\n")
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  return normalizeWords(lines);
+}
+function upsertSavedLesson(payload){
+  const cleanName = String(payload.lesson||"").trim();
+  const cleanWords = normalizeWords(payload.words || []);
+  const question = String(payload.question || "請找出下列語詞").trim() || "請找出下列語詞";
+  const gridSizeMode = payload.gridSizeMode ?? "auto";
+  const gridText = String(payload.gridText || "").replace(/\r/g,"").trim();
+
+  if(!cleanName) throw new Error("課程名稱不可空白。");
+  if(cleanWords.length < 2) throw new Error("至少需要 2 個語詞（每行一個）。");
+
+  const list = loadSavedCustomLessons();
+  const idx = list.findIndex(x => x.lesson === cleanName);
+
+  const saved = { lesson: cleanName, words: cleanWords, question, gridSizeMode, gridText };
+  if(idx >= 0) list[idx] = saved;
+  else list.unshift(saved);
+
+  if(!saveCustomLessons(list)) throw new Error("儲存失敗：可能是瀏覽器阻擋或儲存空間不足。");
+  return list;
+}
+function deleteSavedLessonByName(lessonName){
+  const name = String(lessonName||"").trim();
+  const list = loadSavedCustomLessons().filter(x => x.lesson !== name);
+  if(!saveCustomLessons(list)) throw new Error("刪除失敗：可能是瀏覽器阻擋或儲存空間不足。");
+  return list;
+}
+
+let DB = structuredClone(BUILTIN);
+let currentLessonIndex = 0;
+let gridSize = 10;
+let grid = [];
+let placements = new Map();
+let found = new Set();
+let selecting = false;
+let startCell = null;
+let currentPath = [];
+let pointerId = null;
+
+const elLessonGrid = document.getElementById("lessonGrid");
+const elGrid = document.getElementById("grid");
+const elPauseOverlay = document.getElementById("pauseOverlay");
+const elWordList = document.getElementById("wordList");
+const elFoundCount = document.getElementById("foundCount");
+const elTotalCount = document.getElementById("totalCount");
+const elBadgeSize = document.getElementById("badgeSize");
+const elPillLesson = document.getElementById("pillLesson");
+const elLessonMeta = document.getElementById("lessonMeta");
+const elToast = document.getElementById("toast");
+const elPillProgress = document.getElementById("pillProgress");
+const elTTSToggle = document.getElementById("ttsToggle");
+const elQuestionText = document.getElementById("questionText");
+const elLessonQuestionHint = document.getElementById("lessonQuestionHint");
+
+const elCustomLessonName = document.getElementById("customLessonName");
+const elCustomQuestion = document.getElementById("customQuestion");
+const elCustomGridSize = document.getElementById("customGridSize");
+const elCustomWords = document.getElementById("customWords");
+const elCustomGridText = document.getElementById("customGridText");
+const elCustomNote = document.getElementById("customNote");
+
+const elSavedSelect = document.getElementById("savedSelect");
+const btnLoadSaved = document.getElementById("btnLoadSaved");
+const btnPlaySaved = document.getElementById("btnPlaySaved");
+const btnDeleteSaved = document.getElementById("btnDeleteSaved");
+
+const elTimerText = document.getElementById("timerText");
+const btnTimerToggle = document.getElementById("btnTimerToggle");
+const btnTimerReset = document.getElementById("btnTimerReset");
+
+let timerMs = 0;
+let timerRunning = false;
+let timerHandle = null;
+let timerLastTs = null;
+
+function fmtTime(ms){
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+}
+function renderTimer(){ elTimerText.textContent = fmtTime(timerMs); }
+function setPausedUI(paused){
+  if(paused){
+    elGrid.classList.add("paused");
+    elPauseOverlay.classList.add("show");
+    elPauseOverlay.setAttribute("aria-hidden","false");
+  }else{
+    elGrid.classList.remove("paused");
+    elPauseOverlay.classList.remove("show");
+    elPauseOverlay.setAttribute("aria-hidden","true");
+  }
+}
+function startTimer(){
+  if(timerRunning) return;
+  timerRunning = true;
+  btnTimerToggle.textContent = "暫停";
+  setPausedUI(false);
+  timerLastTs = performance.now();
+  timerHandle = setInterval(()=>{
+    const now = performance.now();
+    timerMs += Math.max(0, now - timerLastTs);
+    timerLastTs = now;
+    renderTimer();
+  }, 200);
+}
+function pauseTimer(){
+  if(!timerRunning){ startTimer(); return; }
+  timerRunning = false;
+  btnTimerToggle.textContent = "繼續";
+  clearInterval(timerHandle);
+  timerHandle = null;
+  timerLastTs = null;
+  setPausedUI(true);
+  clearSelection();
+  selecting = false;
+  pointerId = null;
+  startCell = null;
+}
+function resetTimer(autoStart=true){
+  timerMs = 0;
+  renderTimer();
+  if(autoStart){
+    timerRunning = false;
+    clearInterval(timerHandle);
+    timerHandle = null;
+    startTimer();
+  }else{
+    timerRunning = false;
+    clearInterval(timerHandle);
+    timerHandle = null;
+    btnTimerToggle.textContent = "繼續";
+    setPausedUI(true);
+  }
+}
+btnTimerToggle.addEventListener("click", ()=>{ if(timerRunning) pauseTimer(); else startTimer(); });
+btnTimerReset.addEventListener("click", ()=>{
+  resetTimer(true);
+  showToast("計時已重設", "已歸零並重新開始計時。", 1200);
+});
+
+function showToast(title, msg, ms=1600){
+  elToast.innerHTML = `<strong>${escapeHtml(title)}</strong><div class="small">${escapeHtml(msg)}</div>`;
+  elToast.classList.add("show");
+  window.clearTimeout(showToast._t);
+  showToast._t = window.setTimeout(()=> elToast.classList.remove("show"), ms);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function computeGridSize(words){
+  const maxLen = Math.max(...words.map(w=>w.length), 2);
+  const count = words.length;
+  let n = 10;
+  if(count >= 13) n = 11;
+  if(maxLen >= 5) n = Math.max(n, 12);
+  if(maxLen >= 7) n = Math.max(n, 13);
+  return Math.min(Math.max(n, 9), 14);
+}
+function setResponsiveCellSize(n){
+  const maxGridPx = Math.min(520, Math.max(320, window.innerWidth - 60));
+  const cell = Math.floor((maxGridPx - 20) / n);
+  document.documentElement.style.setProperty("--cell", `${Math.max(28, Math.min(52, cell))}px`);
+  document.documentElement.style.setProperty("--n", n);
+}
+
+const DIRECTIONS = [
+  { dr: 1, dc: 0 },
+  { dr: 1, dc: 1 },
+  { dr: 1, dc: -1 }
+];
+
+function canPlace(word, r, c, dir, n, board){
+  const L = word.length;
+  const endR = r + dir.dr*(L-1);
+  const endC = c + dir.dc*(L-1);
+  if(endR < 0 || endR >= n || endC < 0 || endC >= n) return false;
+  for(let i=0;i<L;i++){
+    const rr = r + dir.dr*i;
+    const cc = c + dir.dc*i;
+    const ch = board[rr][cc];
+    if(ch !== "" && ch !== word[i]) return false;
+  }
+  return true;
+}
+function placeWord(word, n, board){
+  const tries = 520;
+  for(let t=0;t<tries;t++){
+    const dir = choice(DIRECTIONS);
+    const r = randInt(0, n-1);
+    const c = randInt(0, n-1);
+    if(!canPlace(word, r, c, dir, n, board)) continue;
+    const coords = [];
+    for(let i=0;i<word.length;i++){
+      const rr = r + dir.dr*i;
+      const cc = c + dir.dc*i;
+      board[rr][cc] = word[i];
+      coords.push({r:rr, c:cc});
+    }
+    return coords;
+  }
+  return null;
+}
+function fillRandomChars(n, board){
+  const pool = "的一是在不了有和人這中大為上個國我以要他時來用們生到作地於出就分對成會可主發年動同工也能下過子說產種面而方後多定行學法所民得經十三之進著等部度家電力裡如水化高自二理起小物現實加量都兩體制機當使點從業本去把性好應開它合還因由其些然前外天政四日那社義事平形相全表間樣與關各新線內數正心反你明看原又麼利比或但質氣第向道命此變條只沒結解問意建月公無系軍很情者最立代想已通並提直題黨程展五果料象員革位入常文總次品式活設及管特件長求老頭基資邊流路級少圖山海校書桌筆課".split("");
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      if(board[r][c] === "") board[r][c] = choice(pool);
+    }
+  }
+}
+
+/** 解析老師自訂字格：N行，每行N字，不含空格 */
+function parseCustomGridText(text){
+  const raw = String(text||"").replace(/\r/g,"").trim();
+  if(!raw) return null;
+  const lines = raw.split("\n").map(s => s.trim()).filter(Boolean);
+  if(lines.length < 2) throw new Error("自訂字格至少需要 2 行。");
+  const n = lines.length;
+  const rows = lines.map(line => line.replace(/\s+/g,""));
+  for(const r of rows){
+    if(r.length !== n) throw new Error(`自訂字格格式錯誤：需要 ${n}×${n}，但某一行長度是 ${r.length}。`);
+  }
+  const board = rows.map(r => r.split(""));
+  return { n, board };
+}
+
+/** 在自訂字格中找出每個語詞的座標（僅↓↘↙），用於找到後上色（找不到也不擋遊戲）。 */
+function scanPlacementsFromBoard(words, n, board){
+  const map = new Map();
+  const inRange = (r,c)=> r>=0 && r<n && c>=0 && c<n;
+  for(const w of words){
+    let foundCoords = null;
+    outer:
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        for(const dir of DIRECTIONS){
+          let ok = true;
+          const coords = [];
+          for(let i=0;i<w.length;i++){
+            const rr = r + dir.dr*i;
+            const cc = c + dir.dc*i;
+            if(!inRange(rr,cc)){ ok=false; break; }
+            if(board[rr][cc] !== w[i]){ ok=false; break; }
+            coords.push({r:rr,c:cc});
+          }
+          if(ok){
+            foundCoords = coords;
+            break outer;
+          }
+        }
+      }
+    }
+    if(foundCoords) map.set(w, foundCoords);
+    else map.set(w, null);
+  }
+  return map;
+}
+
+/** 決定字格大小：優先自訂字格，其次課程固定大小，其次自動 */
+function resolveGridSize(lesson, words, customGridParsed){
+  if(customGridParsed?.n) return customGridParsed.n;
+  const mode = lesson.gridSizeMode;
+  if(mode === "auto" || mode == null) return computeGridSize(words);
+  const n = Number(mode);
+  if(Number.isFinite(n)) return Math.min(Math.max(n,9),14);
+  return computeGridSize(words);
+}
+
+function buildPuzzle(lesson){
+  const words = normalizeWords(lesson.words);
+  if(words.length < 1) throw new Error("本課沒有語詞。");
+
+  // 1) 若有自訂字格：直接使用老師字格
+  let customGridParsed = null;
+  try{
+    customGridParsed = parseCustomGridText(lesson.gridText || "");
+  }catch(err){
+    // 自訂字格有填但格式錯：直接擋下（避免學生看到壞字格）
+    throw err;
+  }
+  const n = resolveGridSize(lesson, words, customGridParsed);
+  gridSize = n;
+  setResponsiveCellSize(gridSize);
+
+  if(customGridParsed){
+    grid = customGridParsed.board;
+    placements = scanPlacementsFromBoard(words, gridSize, grid);
+    // 提示：若某些詞找不到，不阻擋，但提醒老師
+    const missing = words.filter(w => !placements.get(w));
+    if(missing.length){
+      showToast("提醒：自訂字格中有詞找不到", `以下語詞未掃描到（仍可遊戲，但找到後可能無法上色）：${missing.slice(0,6).join("、")}${missing.length>6?"…":""}`, 2600);
+    }
+    return { words };
+  }
+
+  // 2) 否則：依方向規則自動放置語詞
+  grid = Array.from({length:gridSize}, ()=> Array.from({length:gridSize}, ()=> ""));
+  placements = new Map();
+  const sorted = [...words].sort((a,b)=> b.length - a.length);
+
+  for(const w of sorted){
+    const coords = placeWord(w, gridSize, grid);
+    if(!coords){
+      // 若使用者指定固定大小且放不下，直接報錯（不默默改大，避免違背老師設定）
+      const fixed = (lesson.gridSizeMode && lesson.gridSizeMode !== "auto");
+      if(fixed){
+        throw new Error(`語詞放置失敗：${w}（此課字格大小固定為 ${gridSize}×${gridSize}，可改大或縮短/減少語詞）`);
+      }
+      // 自動模式：允許逐步放大到14
+      if(gridSize < 14){
+        gridSize += 1;
+        setResponsiveCellSize(gridSize);
+        grid = Array.from({length:gridSize}, ()=> Array.from({length:gridSize}, ()=> ""));
+        placements = new Map();
+        for(const ww of sorted){
+          const cc = placeWord(ww, gridSize, grid);
+          if(!cc) throw new Error(`語詞放置失敗：${ww}（可減少語詞數或縮短詞長）`);
+          placements.set(ww, cc);
+        }
+        fillRandomChars(gridSize, grid);
+        return { words };
+      } else {
+        throw new Error(`語詞放置失敗：${w}（可減少語詞數或縮短詞長）`);
+      }
+    }
+    placements.set(w, coords);
+  }
+  fillRandomChars(gridSize, grid);
+  return { words };
+}
+
+function playTone(ctx, freq, ms, gain=0.05, type="sine"){
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = gain;
+  o.connect(g); g.connect(ctx.destination);
+  o.start();
+  setTimeout(()=>{ o.stop(); }, ms);
+}
+function sfxFoundOne(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    playTone(ctx, 880, 90, 0.05);
+    setTimeout(()=> playTone(ctx, 1175, 120, 0.05), 110);
+    setTimeout(()=> ctx.close(), 320);
+  }catch(_){}
+}
+function sfxAllDone(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    playTone(ctx, 659, 110, 0.05);
+    setTimeout(()=> playTone(ctx, 784, 110, 0.05), 120);
+    setTimeout(()=> playTone(ctx, 988, 140, 0.05), 240);
+    setTimeout(()=> playTone(ctx, 1319, 180, 0.05), 400);
+    setTimeout(()=> ctx.close(), 700);
+  }catch(_){}
+}
+function sfxWrong(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    playTone(ctx, 220, 160, 0.05);
+    setTimeout(()=> ctx.close(), 220);
+  }catch(_){}
+}
+function speak(text){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices?.() || [];
+    const zh = voices.find(v => /zh|Chinese/i.test(v.lang) || /zh|Chinese/i.test(v.name));
+    if(zh) u.voice = zh;
+    u.lang = "zh-TW";
+    u.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(_){}
+}
+
+function renderLessons(){
+  elLessonGrid.innerHTML = "";
+  DB.lessons.forEach((l, idx)=>{
+    const btn = document.createElement("button");
+    btn.className = "lesson-btn";
+    if(idx === currentLessonIndex) btn.classList.add("active");
+    const words = normalizeWords(l.words || []);
+    const prefix = l._saved ? "📝 " : "🌟 ";
+    const q = String(l.question || "請找出下列語詞").trim();
+    const gridTag = (String(l.gridText||"").trim()) ? "（自訂字格）" : "";
+    btn.innerHTML = `<strong>${prefix}${escapeHtml(l.lesson)}${escapeHtml(gridTag)}</strong><span>${words.length} 個語詞｜${escapeHtml(q)}</span>`;
+    btn.addEventListener("click", ()=>{
+      currentLessonIndex = idx;
+      startLesson(true);
+      renderLessons();
+    });
+    elLessonGrid.appendChild(btn);
+  });
+}
+function renderWordList(words){
+  elWordList.innerHTML = "";
+  elTotalCount.textContent = String(words.length);
+  for(const w of words){
+    const item = document.createElement("div");
+    item.className = "w";
+    item.dataset.word = w;
+    item.innerHTML = `<span>${escapeHtml(w)}</span><span class="tick">□</span>`;
+    item.addEventListener("click", ()=>{ if(elTTSToggle.checked) speak(w); });
+    elWordList.appendChild(item);
+  }
+  updateProgress();
+}
+function renderGrid(){
+  elGrid.innerHTML = "";
+  elGrid.style.setProperty("--n", gridSize);
+  for(let r=0;r<gridSize;r++){
+    for(let c=0;c<gridSize;c++){
+      const d = document.createElement("div");
+      d.className = "cell";
+      d.textContent = grid[r][c];
+      d.dataset.r = r;
+      d.dataset.c = c;
+      elGrid.appendChild(d);
+    }
+  }
+}
+function setHeaderMeta(words){
+  const lesson = DB.lessons[currentLessonIndex];
+  elPillLesson.textContent = `目前：${lesson.lesson}`;
+  elLessonMeta.textContent = `共 ${words.length} 詞｜字格 ${gridSize}×${gridSize}`;
+  elBadgeSize.textContent = `${gridSize}×${gridSize}`;
+  const q = String(lesson.question || "請找出下列語詞").trim() || "請找出下列語詞";
+  elQuestionText.textContent = q;
+  elLessonQuestionHint.textContent = `題目：${q}`;
+}
+function updateProgress(){
+  elFoundCount.textContent = String(found.size);
+  const total = Number(elTotalCount.textContent || "0");
+  elPillProgress.style.display = (total > 0 && found.size === total) ? "inline-flex" : "none";
+}
+function getCellEl(r,c){ return elGrid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+function clearSelection(){
+  for(const el of elGrid.querySelectorAll(".cell.sel")) el.classList.remove("sel");
+  currentPath = [];
+}
+function applySelection(path){
+  clearSelection();
+  for(const p of path){
+    const cell = getCellEl(p.r, p.c);
+    if(cell) cell.classList.add("sel");
+  }
+  currentPath = path;
+}
+
+function getLinePath(a, b){
+  const dr = b.r - a.r;
+  const dc = b.c - a.c;
+  const adr = Math.abs(dr), adc = Math.abs(dc);
+
+  if(dr === 0 && dc === 0) return [{r:a.r,c:a.c}];
+
+  if(dc === 0 && dr > 0){
+    const path = [];
+    for(let i=0;i<=dr;i++) path.push({r:a.r + i, c:a.c});
+    return path;
+  }
+  if(dr > 0 && dc > 0 && adr === adc){
+    const path = [];
+    for(let i=0;i<=adr;i++) path.push({r:a.r + i, c:a.c + i});
+    return path;
+  }
+  if(dr > 0 && dc < 0 && adr === adc){
+    const path = [];
+    for(let i=0;i<=adr;i++) path.push({r:a.r + i, c:a.c - i});
+    return path;
+  }
+  return null;
+}
+function pathToString(path){ return path.map(p => grid[p.r][p.c]).join(""); }
+
+function markFound(word){
+  found.add(word);
+  const coords = placements.get(word);
+  if(coords){
+    for(const p of coords){
+      const el = getCellEl(p.r, p.c);
+      if(el) el.classList.add("found");
+    }
+  }
+  const item = elWordList.querySelector(`.w[data-word="${CSS.escape(word)}"]`);
+  if(item){
+    item.classList.add("found");
+    const tick = item.querySelector(".tick");
+    if(tick) tick.textContent = "✓";
+  }
+  updateProgress();
+}
+
+function cellFromPoint(x,y){
+  const el = document.elementFromPoint(x,y);
+  if(!el) return null;
+  const cell = el.closest?.(".cell");
+  if(!cell) return null;
+  return { r: Number(cell.dataset.r), c: Number(cell.dataset.c) };
+}
+function onPointerDown(e){
+  if(!timerRunning) return;
+  elGrid.setPointerCapture?.(e.pointerId);
+  pointerId = e.pointerId;
+  const p = cellFromPoint(e.clientX, e.clientY);
+  if(!p) return;
+  selecting = true;
+  startCell = p;
+  applySelection([p]);
+}
+function onPointerMove(e){
+  if(!selecting || e.pointerId !== pointerId) return;
+  const p = cellFromPoint(e.clientX, e.clientY);
+  if(!p || !startCell) return;
+  const path = getLinePath(startCell, p);
+  if(!path) return;
+  applySelection(path);
+}
+function onPointerUp(e){
+  if(!selecting || e.pointerId !== pointerId) return;
+  selecting = false;
+  pointerId = null;
+
+  const selected = pathToString(currentPath);
+  const words = normalizeWords(DB.lessons[currentLessonIndex].words);
+  const hit = words.find(w => w === selected) || null;
+
+  if(hit && !found.has(hit)){
+    markFound(hit);
+    const total = Number(elTotalCount.textContent || "0");
+    const doneAll = (total > 0 && found.size === total);
+
+    if(doneAll){
+      sfxAllDone();
+      timerRunning = false;
+      clearInterval(timerHandle);
+      timerHandle = null;
+      btnTimerToggle.textContent = "繼續";
+      setPausedUI(true);
+      showToast("全都找到了！", `你完成了「${DB.lessons[currentLessonIndex].lesson}」。用時 ${fmtTime(timerMs)}。`, 2600);
+    }else{
+      sfxFoundOne();
+      showToast("找到啦！", `你找到了「${hit}」。`);
+    }
+    if(elTTSToggle.checked) speak(hit);
+  }else if(hit && found.has(hit)){
+    sfxWrong();
+    showToast("這個已經找過了", `「${hit}」已經打勾了。`, 1200);
+  }else{
+    sfxWrong();
+  }
+
+  for(const el of elGrid.querySelectorAll(".cell.sel")) el.classList.remove("sel");
+  currentPath = [];
+  startCell = null;
+}
+
+function upsertCustomIntoDB(lessonObj){
+  const idx = DB.lessons.findIndex(l => l._custom === true);
+  const payload = Object.assign({}, lessonObj, { _custom:true, _saved:true });
+  if(idx >= 0){ DB.lessons[idx] = payload; return idx; }
+  DB.lessons.unshift(payload); return 0;
+}
+
+function refreshSavedSelect(){
+  const list = loadSavedCustomLessons();
+  elSavedSelect.innerHTML = "";
+
+  if(list.length === 0){
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "（目前沒有已儲存的自訂課程）";
+    elSavedSelect.appendChild(opt);
+    elSavedSelect.disabled = true;
+    btnLoadSaved.disabled = true;
+    btnPlaySaved.disabled = true;
+    btnDeleteSaved.disabled = true;
+    return;
+  }
+
+  elSavedSelect.disabled = false;
+  btnLoadSaved.disabled = false;
+  btnPlaySaved.disabled = false;
+  btnDeleteSaved.disabled = false;
+
+  for(const item of list){
+    const opt = document.createElement("option");
+    opt.value = item.lesson;
+    const tag = item.gridText ? "｜自訂字格" : "";
+    opt.textContent = `${item.lesson}（${item.words.length}詞${tag}）`;
+    elSavedSelect.appendChild(opt);
+  }
+}
+function getSavedSelected(){
+  const name = elSavedSelect.value;
+  if(!name) return null;
+  return loadSavedCustomLessons().find(x => x.lesson === name) || null;
+}
+function mergeSavedIntoDB(){
+  const saved = loadSavedCustomLessons().map(x => ({
+    lesson: x.lesson,
+    words: x.words,
+    question: x.question,
+    gridSizeMode: x.gridSizeMode,
+    gridText: x.gridText,
+    _saved: true
+  }));
+  const currentCustom = DB.lessons.find(l => l._custom === true) || null;
+  const builtins = structuredClone(BUILTIN).lessons;
+  const combined = [];
+  combined.push(...saved);
+  if(currentCustom) combined.push(currentCustom);
+  combined.push(...builtins);
+  DB.lessons = combined;
+  currentLessonIndex = Math.min(currentLessonIndex, DB.lessons.length - 1);
+}
+
+function startLesson(regenerate=true){
+  const lesson = DB.lessons[currentLessonIndex];
+  resetTimer(true);
+
+  if(regenerate){
+    found.clear();
+    placements = new Map();
+    const result = buildPuzzle(lesson);
+    setHeaderMeta(result.words);
+    renderGrid();
+    renderWordList(result.words);
+    showToast("開始囉！", `已載入「${lesson.lesson}」。`);
+  }else{
+    found.clear();
+    for(const el of elGrid.querySelectorAll(".cell.found")) el.classList.remove("found");
+    for(const el of elWordList.querySelectorAll(".w.found")){
+      el.classList.remove("found");
+      const tick = el.querySelector(".tick");
+      if(tick) tick.textContent = "□";
+    }
+    updateProgress();
+    showToast("重新開始", "已清除找到狀態並重新計時。");
+  }
+  renderLessons();
+}
+
+document.getElementById("btnApplyCustom").addEventListener("click", ()=>{
+  try{
+    const lesson = String(elCustomLessonName.value||"").trim();
+    const question = String(elCustomQuestion.value||"").trim() || "請找出下列語詞";
+    const words = parseLinesToWords(elCustomWords.value);
+
+    const gridSizeMode = elCustomGridSize.value; // auto | 9..14
+    const gridText = String(elCustomGridText.value||"").replace(/\r/g,"").trim();
+
+    // 若填了自訂字格：先做格式檢查（避免存入壞資料）
+    if(gridText){
+      const parsed = parseCustomGridText(gridText);
+      // 若老師同時選了固定大小，需一致
+      if(gridSizeMode !== "auto"){
+        const want = Number(gridSizeMode);
+        if(parsed.n !== want) throw new Error(`自訂字格是 ${parsed.n}×${parsed.n}，但你選的是 ${want}×${want}。請一致後再儲存。`);
+      }
+    }
+
+    upsertSavedLesson({ lesson, words, question, gridSizeMode, gridText });
+    upsertCustomIntoDB({ lesson, words, question, gridSizeMode, gridText });
+    mergeSavedIntoDB();
+    refreshSavedSelect();
+
+    const savedIdx = DB.lessons.findIndex(l => l._saved && l.lesson === lesson);
+    currentLessonIndex = savedIdx >= 0 ? savedIdx : 0;
+
+    const gtag = gridText ? "（含自訂字格）" : "";
+    elCustomNote.textContent = `已儲存「${lesson}」，共 ${words.length} 個語詞${gtag}。`;
+    showToast("自訂已儲存", `已保存到本機：${lesson}。`);
+    startLesson(true);
+  }catch(err){
+    showToast("自訂失敗", err.message || String(err), 2600);
+  }
+});
+
+document.getElementById("btnClearCustom").addEventListener("click", ()=>{
+  elCustomWords.value = "";
+  elCustomGridText.value = "";
+  elCustomNote.textContent = "";
+  showToast("已清空", "可以重新貼上語詞/字格。", 1200);
+});
+
+document.getElementById("btnMakeGridTemplate").addEventListener("click", ()=>{
+  // 依目前選擇產生模板：若是auto，預設10
+  const v = elCustomGridSize.value;
+  const n = (v === "auto") ? 10 : Number(v);
+  const line = "□".repeat(n);
+  elCustomGridText.value = Array.from({length:n}, ()=> line).join("\n");
+  showToast("已產生模板", `請將 □ 替換成你要的字格內容（${n}×${n}）。`, 1800);
+});
+
+document.getElementById("btnUseBuiltin").addEventListener("click", ()=>{
+  DB = structuredClone(BUILTIN);
+  currentLessonIndex = 0;
+  elCustomNote.textContent = "";
+  showToast("已切回內建題庫", "可直接開始玩（已重設計時）。");
+  startLesson(true);
+});
+
+btnLoadSaved.addEventListener("click", ()=>{
+  const item = getSavedSelected();
+  if(!item) return;
+  elCustomLessonName.value = item.lesson;
+  elCustomWords.value = item.words.join("\n");
+  elCustomQuestion.value = item.question || "請找出下列語詞";
+  elCustomGridSize.value = (item.gridSizeMode ?? "auto");
+  elCustomGridText.value = item.gridText || "";
+  showToast("已載入", `已將「${item.lesson}」帶入輸入框。`, 1400);
+});
+
+btnPlaySaved.addEventListener("click", ()=>{
+  const item = getSavedSelected();
+  if(!item) return;
+  mergeSavedIntoDB();
+  const idx = DB.lessons.findIndex(l => l._saved && l.lesson === item.lesson);
+  if(idx >= 0){
+    currentLessonIndex = idx;
+    startLesson(true);
+    renderLessons();
+    showToast("開始此課", `已載入「${item.lesson}」。`, 1400);
+  }
+});
+
+btnDeleteSaved.addEventListener("click", ()=>{
+  const item = getSavedSelected();
+  if(!item) return;
+  try{
+    deleteSavedLessonByName(item.lesson);
+    refreshSavedSelect();
+    mergeSavedIntoDB();
+    renderLessons();
+    showToast("已刪除", `已從本機刪除「${item.lesson}」。`, 1600);
+  }catch(err){
+    showToast("刪除失敗", err.message || String(err), 2200);
+  }
+});
+
+document.getElementById("btnNew").addEventListener("click", ()=> startLesson(true));
+document.getElementById("btnReset").addEventListener("click", ()=> startLesson(false));
+
+elGrid.addEventListener("pointerdown", onPointerDown);
+elGrid.addEventListener("pointermove", onPointerMove);
+elGrid.addEventListener("pointerup", onPointerUp);
+elGrid.addEventListener("pointercancel", onPointerUp);
+
+window.addEventListener("resize", ()=> { if(gridSize) setResponsiveCellSize(gridSize); });
+
+function startApp(){
+  mergeSavedIntoDB();
+  refreshSavedSelect();
+  renderLessons();
+  renderTimer();
+  startLesson(true);
+}
+startApp();
+</script>
+</body>
+</html>
